@@ -11,4 +11,5 @@ engine,bind=test.create_con('postgresql://postgres:1qaz!QAZ@localhost:5432/Bank'
 Session=sessionmaker(bind=engine)
 session=Session()
 result=session.query(test.clients.id).all()
-print(max(result)[0])
+print(result)
+# print(max(result)[0])

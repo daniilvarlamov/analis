@@ -80,8 +80,13 @@ def generate_random_email():
     return f"{generate_random_string(5)}@{generate_random_string(5)}.com"
 
 def create_clients_data(session,count):
-    for i in range(count):
-        user=clients(firstname=names.get_first_name(),lastname=names.get_last_name(),dateofbirth = generate_random_date(datetime(1980, 1, 1), datetime(2000, 12, 31)),
+    result=session.query(clients.id).all()
+    if(result==[]):
+        count_id=1
+    else:
+        count_id=max(result)[0]+1
+    for i in range(count_id,count+1):
+        user=clients(id=i,firstname=names.get_first_name(),lastname=names.get_last_name(),dateofbirth = generate_random_date(datetime(1980, 1, 1), datetime(2000, 12, 31)),
                  address = generate_random_string(10),phonenumber = generate_random_phone_number(),email = generate_random_email(),
                  passportdata = generate_random_string(8),registrationdate = generate_random_date(datetime(2010, 1, 1), datetime.now()))
         session.add(user)
@@ -89,8 +94,13 @@ def create_clients_data(session,count):
 
 def create_acconts_data(session):
     result=session.query(clients.id).all()
-    for i in range(max(result)[0]):
-        account=bankaccounts(clientid=i,
+    result_bank=session.query(bankaccounts.id).all()
+    if(result_bank==[]):
+        count_id=1
+    else:
+        count_id=max(result)[0]+1
+    for i in range(count_id,max(result)[0]+1):
+        account=bankaccounts(id=i,clientid=i,
                              accountnumber = generate_random_string(10),
                              accounttype = random.choice(["дебетовый", "кредитный"]),
                              creationdate = generate_random_date(datetime(2010, 1, 1), datetime.now()),
@@ -103,7 +113,7 @@ def gen_receiver(senderaccountid):
     if random.randint(max(clientids)[0])==senderaccountid:
         gen_receiver(senderaccountid)
     else:
-        return random.randint(max(clientids[0]))
+        return random.randint(max(clientids)[0])
 
 def create_transactions_data(session):
     result=session.query(bankaccounts).all()
@@ -112,6 +122,7 @@ def create_transactions_data(session):
         senderaccountid=random.randint(max(clientids[0]))
         transaction=transactions(senderaccountid=senderaccountid,
                                  receiveraccountid=gen_receiver(senderaccountid),
+                                 
                                  )
 
 
@@ -120,4 +131,6 @@ if __name__=='__main__':
     Session=sessionmaker(bind=engine)
     session=Session()
     create_clients_data(session,10)
-    create_acconts_data(session)
+    session.close()
+    session1=Session()
+    create_acconts_data(session1)
