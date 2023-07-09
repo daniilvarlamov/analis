@@ -116,14 +116,15 @@ def gen_receiver(senderaccountid):
         return random.randint(max(clientids)[0])
 
 def create_transactions_data(session):
-    result=session.query(bankaccounts).all()
-    clientids=session.query(clients).all().id
-    for i in range(max(clientids)[0]):
-        senderaccountid=random.randint(max(clientids[0]))
-        transaction=transactions(senderaccountid=senderaccountid,
-                                 receiveraccountid=gen_receiver(senderaccountid),
-                                 
-                                 )
+    result=session.query(bankaccounts.id).all()
+    clientids=session.query(clients.id).all()
+    for item in range()
+        for i in range(max(clientids)[0]):
+            senderaccountid=random.randint(max(clientids[0]))
+            transaction=transactions(senderaccountid=senderaccountid,
+                                    receiveraccountid=gen_receiver(senderaccountid),
+                                    
+                                    )
 
 
 if __name__=='__main__':
