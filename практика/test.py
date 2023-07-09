@@ -99,7 +99,7 @@ def create_acconts_data(session):
     if(result_bank==[]):
         count_id=1
     else:
-        count_id=max(result)[0]+1
+        count_id=max(result_bank)[0]+1
     for i in range(count_id,max(result)[0]+1):
         account=bankaccounts(id=i,clientid=i,
                              accountnumber = generate_random_string(10),
@@ -112,22 +112,28 @@ def create_acconts_data(session):
 def gen_receiver(senderaccountid):
     accountids=session.query(bankaccounts.id).all()
     accid=random.randint(min(accountids)[0],max(accountids)[0])
-    if accid==senderaccountid:
-        gen_receiver(senderaccountid)
-    else:
-        return accid
+    while accid==senderaccountid:
+        accid=random.randint(min(accountids)[0],max(accountids)[0])
+    return accid
 
 def create_transactions_data(session,count):
     result_id=session.query(bankaccounts.id).all()
     result_date=session.query(bankaccounts.creationdate).all()
+    result_trans=session.query(transactions.id).all()
+    if(result_trans==[]):
+        count_id=1
+    else:
+        count_id=max(result_trans)[0]+1
     for item in range(max(result_id)[0]):
         for i in range(count):
             senderaccountid=random.randint(min(result_id)[0],max(result_id)[0])
             receiveraccountid=gen_receiver(senderaccountid)
-            transaction=transactions(senderaccountid=senderaccountid,
-                                    receiveraccountid=receiveraccountid,
-                                    amount=random.randint(500, 15000),
-                                    transaction_date=generate_random_date(datetime.combine(result_date[item][0],datetime.min.time()), datetime.now()))
+            transaction=transactions(id=count_id,
+                                     senderaccountid=senderaccountid,
+                                     receiveraccountid=receiveraccountid,
+                                     amount=random.randint(500, 15000),
+                                     transaction_date=generate_random_date(datetime.combine(result_date[item][0],datetime.min.time()), datetime.now()))
+            count_id=count_id+1
             session.add(transaction)
     session.commit()
 

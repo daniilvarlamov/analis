@@ -4,12 +4,23 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import test
 import random
+from datetime import datetime, timedelta
+import time
 
 # Создаем соединение с базой данных
-engine = create_engine('postgresql://postgres:1qaz!QAZ@localhost:5432/Bank')
-Session = sessionmaker(bind=engine)
-session = Session()
+# engine = create_engine('postgresql://postgres:1qaz!QAZ@localhost:5432/Bank')
+# Session = sessionmaker(bind=engine)
+# session = Session()
 
-result=session.query(test.bankaccounts.id).all()
-res=random.randint(min(result)[0],max(result)[0])
-print(type(max(result)[0]))
+
+def generate_random_date(start_date, end_date):
+    days = (end_date - start_date).days
+    random_days = random.randint(0, days)
+    random_date = (start_date + timedelta(days=random_days)).__str__()
+    return random_date
+
+start_date = datetime(2023, 1, 1)
+end_date = datetime(2023, 12, 31)
+
+random_datetime = generate_random_date(start_date, end_date)
+print(random_datetime)
