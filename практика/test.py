@@ -56,6 +56,7 @@ class transactions(Base):
 class suspensiontransactions(Base):
     __tablename__='suspensiontransactions'
     id=Column(Integer,primary_key=True,autoincrement=True)
+    transactionid=Column(Integer,ForeignKey('transactions.id'))
     senderaccountid=Column(Integer,ForeignKey('bankaccounts.id'))
     receiveraccountid=Column(Integer,ForeignKey('bankaccounts.id'))
     amount=Column(Numeric)
@@ -109,29 +110,38 @@ def create_acconts_data(session):
     session.commit()
 
 def gen_receiver(senderaccountid):
-    clientids=session.query(clients).all()
-    if random.randint(max(clientids)[0])==senderaccountid:
+    accountids=session.query(bankaccounts.id).all()
+    accid=random.randint(min(accountids)[0],max(accountids)[0])
+    if accid==senderaccountid:
         gen_receiver(senderaccountid)
     else:
-        return random.randint(max(clientids)[0])
+        return accid
 
-def create_transactions_data(session):
-    result=session.query(bankaccounts.id).all()
-    clientids=session.query(clients.id).all()
-    for item in range()
-        for i in range(max(clientids)[0]):
-            senderaccountid=random.randint(max(clientids[0]))
+def create_transactions_data(session,count):
+    result_id=session.query(bankaccounts.id).all()
+    result_date=session.query(bankaccounts.creationdate).all()
+    for item in range(max(result_id)[0]):
+        for i in range(count):
+            senderaccountid=random.randint(min(result_id)[0],max(result_id)[0])
+            receiveraccountid=gen_receiver(senderaccountid)
             transaction=transactions(senderaccountid=senderaccountid,
-                                    receiveraccountid=gen_receiver(senderaccountid),
-                                    
-                                    )
+                                    receiveraccountid=receiveraccountid,
+                                    amount=random.randint(500, 15000),
+                                    transaction_date=generate_random_date(datetime.combine(result_date[item][0],datetime.min.time()), datetime.now()))
+            session.add(transaction)
+    session.commit()
 
 
 if __name__=='__main__':
     Base.metadata.create_all(bind=engine)
     Session=sessionmaker(bind=engine)
     session=Session()
-    create_clients_data(session,10)
+    c=int(input("Сколько клиентов?\n"))
+    create_clients_data(session,c)
     session.close()
     session1=Session()
     create_acconts_data(session1)
+    session.close()
+    session2=Session()
+    count=int(input("Сколько транзакций у 1 клиента?\n"))
+    create_transactions_data(session2,count)
