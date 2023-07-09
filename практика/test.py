@@ -88,9 +88,8 @@ def create_clients_data(session,count):
     session.commit()
 
 def create_acconts_data(session):
-    result=session.query(clients).all()
-    ids=[row[0] for row in result]
-    for i in range(max(ids)):
+    result=session.query(clients.id).all()
+    for i in range(max(result)[0]):
         account=bankaccounts(clientid=i,
                              accountnumber = generate_random_string(10),
                              accounttype = random.choice(["дебетовый", "кредитный"]),
@@ -98,14 +97,22 @@ def create_acconts_data(session):
                              balance = random.randint(1000, 10000))
         session.add(account)
     session.commit()
-    
+
+def gen_receiver(senderaccountid):
+    clientids=session.query(clients).all()
+    if random.randint(max(clientids)[0])==senderaccountid:
+        gen_receiver(senderaccountid)
+    else:
+        return random.randint(max(clientids[0]))
 
 def create_transactions_data(session):
     result=session.query(bankaccounts).all()
-    ids=[row[0] for row in result]
-    clientids=session.query(clients).all()
-    for i in range(max(ids)):
-        transaction=transactions(senderaccountid=random.choice())
+    clientids=session.query(clients).all().id
+    for i in range(max(clientids)[0]):
+        senderaccountid=random.randint(max(clientids[0]))
+        transaction=transactions(senderaccountid=senderaccountid,
+                                 receiveraccountid=gen_receiver(senderaccountid),
+                                 )
 
 
 if __name__=='__main__':
