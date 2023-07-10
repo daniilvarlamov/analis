@@ -1,26 +1,40 @@
-from sqlalchemy import create_engine, Column, Integer, String, Date,ForeignKey, DateTime, Numeric,MetaData, func
+from sqlalchemy import and_
+from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, DateTime, Numeric, func
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-import test
-import random
+from sqlalchemy.orm import declarative_base
 from datetime import datetime, timedelta
-import time
 
-# Создаем соединение с базой данных
-# engine = create_engine('postgresql://postgres:1qaz!QAZ@localhost:5432/Bank')
-# Session = sessionmaker(bind=engine)
-# session = Session()
+import test
+#Создаем соединение с базой данных
+engine = create_engine('postgresql://postgres:1qaz!QAZ@localhost:5432/Bank')
+Session = sessionmaker(bind=engine)
+session = Session()
+
+#Определяем временной интервал 10 секунд
+timelimit = datetime.now() - timedelta(seconds=10)
+#Получаем все записи с одинаковым значением столбца id и разницей в 10 секунд
+count=session.query(test.transactions).count()
+records = session.query(test.transactions.senderaccountid).group_by(test.transactions.senderaccountid).all()
+for item in range(1,count+1):
+    for i in records:
+        result=session.query(test.transactions).filter(test.transactions.senderaccountid==i[0]).all()
+        for j in result:
+            count=0
+            date_last=j.transaction_date
+            for k in result:
+                timelimit_min = j.transaction_date - timedelta(seconds=5)
+                timelimit_max = j.transaction_date + timedelta(seconds=5)
+                if k.transaction_date>=timelimit_min and k.transaction_date<=timelimit_max:
+                    count=count+1
+                    if count>=3:
+                        res=session.query(test.suspensiontransactions).filter(and_())
+                        trans=test.suspensiontransactions(transactionid=j.id,senderaccountid=j.senderaccountid,receiveraccountid=j.receiveraccountid,amount=j.amount,transaction_date=j.transaction_date,Comment="Подозрительная транзакция времени")
+                        session.add(trans)
+                        count=0
+                else:
+                    continue
+                
 
 
-def generate_random_date(start_date, end_date):
-    days = (end_date - start_date).days
-    random_days = random.randint(0, days)
-    random_date = (start_date + timedelta(days=random_days)).__str__()
-    return random_date
-
-start_date = datetime(2023, 1, 1)
-end_date = datetime(2023, 12, 31)
-
-random_datetime = generate_random_date(start_date, end_date)
-print(random_datetime)
+session.commit()
