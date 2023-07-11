@@ -14,11 +14,10 @@ def create_con(con_str):
     Base=declarative_base()
     return engine,Base
 
-engine = create_engine('postgresql://postgres:root@localhost:5432/Bank')
+engine = create_engine('postgresql://postgres:1qaz!QAZ@localhost:5432/Bank')
 Base=declarative_base()
 
 
-#создание модели данных
 class clients(Base):
     __tablename__='clients'
     id=Column(Integer, primary_key=True,autoincrement=True)
@@ -61,15 +60,20 @@ class suspensiontransactions(Base):
     receiveraccountid=Column(Integer,ForeignKey('bankaccounts.id'))
     amount=Column(Numeric)
     transaction_date=Column(DateTime)
-    Comment=Column(String)
+    comm=Column(String)
 
 #генерация
 def generate_random_string(length):
     letters = string.ascii_letters
     return ''.join(random.choice(letters) for i in range(length))
 
-
 def generate_random_date(start_date, end_date):
+    days = (end_date - start_date).days
+    random_days = random.randint(0, days)
+    random_date = (start_date + timedelta(days=random_days)).__str__()
+    return random_date
+
+def generate_random_date_time(start_date, end_date):
     days = (end_date - start_date).days
     random_days = random.randint(0, days)
     random_seconds = random.randint(0, 24 * 60 * 60 - 1)
@@ -85,27 +89,20 @@ def generate_random_email():
     return f"{generate_random_string(5)}@{generate_random_string(5)}.com"
 
 def create_clients_data(session,count):
-    result=session.query(clients.id).all()
-    if(result==[]):
-        count_id=1
-    else:
-        count_id=max(result)[0]+1
-    for i in range(count_id,count+1):
+    result=session.query(clients.id).count()+1
+    arr.clear()
+    for i in range(result,result+count):
         user=clients(id=i,firstname=names.get_first_name(),lastname=names.get_last_name(),dateofbirth = generate_random_date(datetime(1980, 1, 1), datetime(2000, 12, 31)),
                  address = generate_random_string(10),phonenumber = generate_random_phone_number(),email = generate_random_email(),
                  passportdata = generate_random_string(8),registrationdate = generate_random_date(datetime(2010, 1, 1), datetime.now()))
+        arr.append(i)
         session.add(user)
     session.commit()
 
 def create_acconts_data(session):
-    result=session.query(clients.id).all()
-    result_bank=session.query(bankaccounts.id).all()
-    if(result_bank==[]):
-        count_id=1
-    else:
-        count_id=max(result_bank)[0]+1
-    for i in range(count_id,max(result)[0]+1):
-        account=bankaccounts(id=i,clientid=i,
+    result_bank=session.query(bankaccounts.id).count()+1
+    for i in range(result_bank,result_bank+len(arr)):
+        account=bankaccounts(id=i,clientid=arr[i-result_bank],
                              accountnumber = generate_random_string(10),
                              accounttype = random.choice(["дебетовый", "кредитный"]),
                              creationdate = generate_random_date(datetime(2010, 1, 1), datetime.now()),
@@ -114,35 +111,33 @@ def create_acconts_data(session):
     session.commit()
 
 def gen_receiver(senderaccountid):
-    accountids=session.query(bankaccounts.id).all()
-    accid=random.randint(min(accountids)[0],max(accountids)[0])
+    accid=random.randint(arr[0],arr[-1])
     while accid==senderaccountid:
-        accid=random.randint(min(accountids)[0],max(accountids)[0])
+        accid=random.randint(arr[0],arr[-1])
     return accid
 
 def create_transactions_data(session,count):
-    result_id=session.query(bankaccounts.id).all()
-    result_date=session.query(bankaccounts.creationdate).all()
-    result_trans=session.query(transactions.id).all()
-    if(result_trans==[]):
-        count_id=1
-    else:
-        count_id=max(result_trans)[0]+1
-    for item in range(max(result_id)[0]):
+    result_id=session.query(bankaccounts.id).filter(bankaccounts.id>=arr[0],bankaccounts.id<=arr[-1]).count()
+    result_date=session.query(bankaccounts.creationdate).filter(bankaccounts.id>=arr[0],bankaccounts.id<=arr[-1]).all()
+    result_trans=session.query(transactions.id).count()+1
+    c=0
+    for item in range(result_id):
         for i in range(count):
-            senderaccountid=random.randint(min(result_id)[0],max(result_id)[0])
+            senderaccountid=arr[c]
             receiveraccountid=gen_receiver(senderaccountid)
-            transaction=transactions(id=count_id,
+            transaction=transactions(id=result_trans,
                                      senderaccountid=senderaccountid,
                                      receiveraccountid=receiveraccountid,
                                      amount=random.randint(500, 15000),
-                                     transaction_date=generate_random_date(datetime.combine(result_date[item][0],datetime.min.time()), datetime.now()))
-            count_id=count_id+1
+                                     transaction_date=generate_random_date_time(datetime.combine(result_date[item][0],datetime.min.time()), datetime.now()))
+            result_trans=result_trans+1
             session.add(transaction)
+        c=c+1
     session.commit()
 
 
 if __name__=='__main__':
+    arr=[]
     Base.metadata.create_all(bind=engine)
     Session=sessionmaker(bind=engine)
     session=Session()
@@ -153,5 +148,5 @@ if __name__=='__main__':
     create_acconts_data(session1)
     session.close()
     session2=Session()
-    count=int(input("Сколько транзакций у 1 клиента?\n"))
+    count=int(input("Сколько транзакций у 1 акаунта?\n"))
     create_transactions_data(session2,count)
